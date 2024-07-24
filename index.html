@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live-streaming Clock with PiP</title>
+    <style>
+        body { margin: 0; padding: 0; background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #videoElement { background: #000; max-width: 100%; height: auto; }
+    </style>
+</head>
+<body>
+    <video id="videoElement" autoplay playsinline muted controls webkit-playsinline></video>
+
+    <script>
+        const video = document.getElementById('videoElement');
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        let stream;
+
+        canvas.width = 640;
+        canvas.height = 360;
+
+        function startStream() {
+            stream = canvas.captureStream(30); // 30 FPS
+            video.srcObject = stream;
+            video.play();
+        }
+
+        function drawClock() {
+            ctx.fillStyle = '#000';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const now = new Date();
+            const dateString = now.toLocaleDateString();
+            const timeString = now.toLocaleTimeString();
+
+            ctx.font = '48px Arial';
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            ctx.fillText(dateString, canvas.width / 2, canvas.height / 2 - 30);
+            ctx.fillText(timeString, canvas.width / 2, canvas.height / 2 + 30);
+
+            requestAnimationFrame(drawClock);
+        }
+
+        // Start stream on page load
+        startStream();
+        drawClock();
+
+        // Restart stream when video plays (needed for iOS)
+        video.addEventListener('play', function() {
+            if (!stream) {
+                startStream();
+            }
+        });
+
+        // Enable PiP button if supported
+        if (document.pictureInPictureEnabled) {
+            const pipButton = document.createElement('button');
+            pipButton.textContent = 'Enter Picture-in-Picture';
+            pipButton.addEventListener('click', () => {
+                if (document.pictureInPictureElement) {
+                    document.exitPictureInPicture();
+                } else {
+                    video.requestPictureInPicture();
+                }
+            });
+            document.body.appendChild(pipButton);
+        }
+    </script>
+</body>
+</html>
